@@ -1,10 +1,12 @@
-import { useLayoutEffect } from "react";
+import { useContext, useLayoutEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Button from "../components/UI/Button";
 import IconButton from "../components/UI/IconButton";
 import { GlobalStyles } from "../constants/style";
+import { ExpensesContext } from "../store/expenses-context";
 
 const ManageExpense = ({ route, navigation }) => {
+  const expensesCtx = useContext(ExpensesContext);
   const editedExpenseId = route.params?.expenseId;
   const isEditing = !!editedExpenseId;
 
@@ -17,10 +19,32 @@ const ManageExpense = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.buttonsContainer}>
-        <Button mode="flat" style={styles.button} onPress={() => {}}>
+        <Button
+          mode="flat"
+          style={styles.button}
+          onPress={() => navigation.goBack()}
+        >
           Cancel
         </Button>
-        <Button style={styles.button} onPress={() => {}}>
+        <Button
+          style={styles.button}
+          onPress={() => {
+            if (isEditing) {
+              expensesCtx.updateExpense(editedExpenseId, {
+                description: "test1",
+                amount: 21.99,
+                date: new Date("2022-08-29"),
+              });
+            } else {
+              expensesCtx.addExpense({
+                description: "test",
+                amount: 19.99,
+                date: new Date("2022-08-29"),
+              });
+            }
+            navigation.goBack();
+          }}
+        >
           {isEditing ? "Update" : "Add"}
         </Button>
       </View>
@@ -30,7 +54,10 @@ const ManageExpense = ({ route, navigation }) => {
             icon="trash"
             color={GlobalStyles.colors.error500}
             size={36}
-            onPress={() => {}}
+            onPress={() => {
+              expensesCtx.deleteExpense(editedExpenseId);
+              navigation.goBack();
+            }}
           />
         </View>
       )}
