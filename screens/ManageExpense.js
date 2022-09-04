@@ -1,6 +1,7 @@
 import { useContext, useLayoutEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import ExpenseForm from "../components/ManageExpense/ExpenseForm";
+import ErrorOverlay from "../components/UI/ErrorOverlay";
 import IconButton from "../components/UI/IconButton";
 import LoadingOverlay from "../components/UI/LoadingOverlay";
 import { GlobalStyles } from "../constants/style";
@@ -9,6 +10,7 @@ import { deleteExpenses, storeExpense, updateExpenses } from "../util/http";
 
 const ManageExpense = ({ route, navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState();
   const expensesCtx = useContext(ExpensesContext);
   const editedExpenseId = route.params?.expenseId;
   const isEditing = !!editedExpenseId;
@@ -25,15 +27,24 @@ const ManageExpense = ({ route, navigation }) => {
 
   const confirmHandler = async (expenseData) => {
     setIsSubmitting(true);
-    if (isEditing) {
-      expensesCtx.updateExpense(editedExpenseId, expenseData);
-      await updateExpenses(editedExpenseId, expenseData);
-    } else {
-      const id = await storeExpense(expenseData);
-      expensesCtx.addExpense({ ...expenseData, id: id });
+    try {
+      if (isEditing) {
+        expensesCtx.updateExpense(editedExpenseId, expenseData);
+        await updateExpenses(editedExpenseId, expenseData);
+      } else {
+        const id = await storeExpense(expenseData);
+        expensesCtx.addExpense({ ...expenseData, id: id });
+      }
+      navigation.goBack();
+    } catch (e) {
+      setError(e.message);
+      setIsSubmitting(false);
     }
-    navigation.goBack();
   };
+
+  if (error && !isSubmitting) {
+    return <ErrorOverlay message={error} onConfirm={() => setError(null)} />;
+  }
 
   if (isSubmitting) {
     return <LoadingOverlay />;
@@ -55,9 +66,14 @@ const ManageExpense = ({ route, navigation }) => {
             size={36}
             onPress={async () => {
               setIsSubmitting(true);
-              await deleteExpenses(editedExpenseId);
-              expensesCtx.deleteExpense(editedExpenseId);
-              navigation.goBack();
+              try {
+                await deleteExpenses(editedExpenseId);
+                expensesCtx.deleteExpense(editedExpenseId);
+                navigation.goBack();
+              } catch (e) {
+                setError(e.message);
+                setIsSubmitting(false);
+              }
             }}
           />
         </View>
