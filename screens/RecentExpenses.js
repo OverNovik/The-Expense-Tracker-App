@@ -1,10 +1,20 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import ExpensesOutput from "../components/ExpensesOutput/ExpensesOutput";
 import { ExpensesContext } from "../store/expenses-context";
 import { getDateMinusDays } from "../util/date";
+import { getExpenses } from "../util/http";
 
 const RecentExpenses = () => {
   const expensesCtx = useContext(ExpensesContext);
+
+  useEffect(() => {
+    const get = async () => {
+      const expenses = await getExpenses();
+      expensesCtx.setExpenses(expenses);
+    };
+
+    get();
+  }, []);
 
   const recentExpenses = expensesCtx.expenses.filter((item) => {
     const today = new Date();
